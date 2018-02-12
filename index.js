@@ -56,7 +56,7 @@ TuioToTouch.prototype.createTouchEvent = function createTouchEvent (type, touche
     targetTouches: targetTouches,
     changedTouches: browserTouches
   })
-  document.body.dispatchEvent(touchEvent)
+  target.dispatchEvent(touchEvent)
 }
 
 TuioToTouch.prototype.updateEvents = function updateEvents () {
