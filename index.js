@@ -2,16 +2,19 @@ const RADIUS = 5
 
 module.exports = TuioToTouch
 
-function TuioToTouch () {
+function TuioToTouch (width = window.innerWidth, height = window.innerHeight, offset = { x: 0, y: 0 }) {
   this.touches = {}
   this.prevTouches = {}
 
   this.fseq = 0
+  this.offset = offset
+  this.width = width
+  this.height = height
 }
 
 TuioToTouch.prototype.coerceToBrowserTouch = function coerceToBrowserTouch (touch) {
-  let clientX = window.innerWidth * touch.TUIOX
-  let clientY = window.innerHeight * touch.TUIOY
+  let clientX = this.width * touch.TUIOX + this.offset.x
+  let clientY = this.height * touch.TUIOY + this.offset.y
 
   // Page is offset from client
   let pageX = window.pageXOffset + clientX
