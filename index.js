@@ -1,12 +1,10 @@
-import debug from 'debug'
+const debug = require('debug')
 
 const d = {
   log: debug('tuio-to-touch')
 }
 
 const RADIUS = 5
-
-module.exports = TuioToTouch
 
 function TuioToTouch (width = window.innerWidth, height = window.innerHeight, offset = { x: 0, y: 0 }) {
   this.touches = {}
@@ -181,3 +179,5 @@ TuioToTouch.prototype.parseTUIO = function parseTUIO (bundle) {
 
   this.updateEvents()
 }
+
+module.exports = { TuioToTouch }

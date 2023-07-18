@@ -1,0 +1,7 @@
+providers:
+  - airtap-electron
+  - airtap-system
+
+browsers:
+  - name: electron
+  - name: chrome
