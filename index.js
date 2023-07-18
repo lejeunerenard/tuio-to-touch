@@ -1,3 +1,9 @@
+import debug from 'debug'
+
+const d = {
+  log: debug('tuio-to-touch')
+}
+
 const RADIUS = 5
 
 module.exports = TuioToTouch
@@ -10,27 +16,29 @@ function TuioToTouch (width = window.innerWidth, height = window.innerHeight, of
   this.offset = offset
   this.width = width
   this.height = height
+  d.log('tuio2touch offset', this.offset, 'width', this.width, 'height', this.height)
 }
 
 TuioToTouch.prototype.coerceToBrowserTouch = function coerceToBrowserTouch (touch) {
-  let clientX = this.width * touch.TUIOX + this.offset.x
-  let clientY = this.height * touch.TUIOY + this.offset.y
+  const clientX = this.width * touch.TUIOX + this.offset.x
+  const clientY = this.height * touch.TUIOY + this.offset.y
+  d.log('tuio2touch client', clientX, clientY)
 
   // Page is offset from client
-  let pageX = window.pageXOffset + clientX
-  let pageY = window.pageYOffset + clientY
-  let screenX = pageX
-  let screenY = pageY
+  const pageX = window.pageXOffset + clientX
+  const pageY = window.pageYOffset + clientY
+  const screenX = pageX
+  const screenY = pageY
 
-  let browserTouch = new Touch({
+  const browserTouch = new Touch({
     target: touch.target || document.elementFromPoint(pageX, pageY) || document.documentElement,
     identifier: touch.sid,
-    clientX: clientX,
-    clientY: clientY,
-    pageX: pageX,
-    pageY: pageY,
-    screenX: screenX,
-    screenY: screenY,
+    clientX,
+    clientY,
+    pageX,
+    pageY,
+    screenX,
+    screenY,
     radiusX: RADIUS,
     radiusY: RADIUS
   })
@@ -42,34 +50,34 @@ TuioToTouch.prototype.coerceToBrowserTouch = function coerceToBrowserTouch (touc
 }
 
 TuioToTouch.prototype.createTouchEvent = function createTouchEvent (type, touches) {
-  let allTouches = Object.keys(this.touches).map((sid) => this.coerceToBrowserTouch(this.touches[sid]))
-  let browserTouches = touches.map((touch) => this.coerceToBrowserTouch(touch))
+  const allTouches = Object.keys(this.touches).map((sid) => this.coerceToBrowserTouch(this.touches[sid]))
+  const browserTouches = touches.map((touch) => this.coerceToBrowserTouch(touch))
 
   // Ensure targets are assigned before this via coerceToBrowserTouch
-  let target = touches[0].target
-  let targetTouches = Object.keys(this.touches).map((sid) => this.touches[sid])
+  const target = touches[0].target
+  const targetTouches = Object.keys(this.touches).map((sid) => this.touches[sid])
     .filter((touch) => touch.target === target)
     .map((touch) => this.coerceToBrowserTouch(touch))
 
-  let touchEvent = new TouchEvent(type, {
+  const touchEvent = new TouchEvent(type, {
     cancelable: true,
     bubbles: true,
     composed: true,
     touches: allTouches,
-    targetTouches: targetTouches,
+    targetTouches,
     changedTouches: browserTouches
   })
   target.dispatchEvent(touchEvent)
 }
 
 TuioToTouch.prototype.updateEvents = function updateEvents () {
-  let startTouches = []
-  let moveTouches = []
-  let endTouches = []
+  const startTouches = []
+  const moveTouches = []
+  const endTouches = []
 
   // Sort and update this.touches
-  for (let sid in this.touches) {
-    let touch = this.touches[sid]
+  for (const sid in this.touches) {
+    const touch = this.touches[sid]
 
     if (!touch.alive) {
       delete this.touches[sid]
@@ -83,17 +91,17 @@ TuioToTouch.prototype.updateEvents = function updateEvents () {
   }
 
   // Emit touchend
-  if (endTouches.length){
+  if (endTouches.length) {
     this.createTouchEvent('touchend', endTouches)
   }
 
   // Emit touchstart
-  if (startTouches.length){
+  if (startTouches.length) {
     this.createTouchEvent('touchstart', startTouches)
   }
 
   // Emit touchmove
-  if (moveTouches.length){
+  if (moveTouches.length) {
     this.createTouchEvent('touchmove', moveTouches)
   }
 }
@@ -110,7 +118,7 @@ TuioToTouch.prototype.createTouch = function createTouch (sid) {
     prevTUIOY: -1,
     prevTUIOVX: -1,
     prevTUIOVY: -1,
-    sid: sid
+    sid
   }
   return this.touches[sid]
 }
@@ -119,7 +127,7 @@ const is2Dcur = /2Dcur$/
 
 TuioToTouch.prototype.parseTUIO = function parseTUIO (bundle) {
   let fseq = 0
-  for (let msg of bundle) {
+  for (const msg of bundle) {
     if (msg[1].toLowerCase() !== 'fseq') continue
 
     fseq = msg[2]
@@ -129,18 +137,18 @@ TuioToTouch.prototype.parseTUIO = function parseTUIO (bundle) {
   if (fseq <= this.fseq) return
   this.fseq = fseq
 
-  for (let msg of bundle) {
-    let type = msg[1].toLowerCase()
+  for (const msg of bundle) {
+    const type = msg[1].toLowerCase()
 
     // Skip if not 2Dcur
     if (!msg[0].match(is2Dcur)) continue
 
     if (type === 'alive') {
-      let prevIds = Object.keys(this.touches)
+      const prevIds = Object.keys(this.touches)
 
-      let sIds = msg.slice(2)
-      for (let sid of sIds) {
-        let index = prevIds.indexOf('' + sid)
+      const sIds = msg.slice(2)
+      for (const sid of sIds) {
+        const index = prevIds.indexOf('' + sid)
         if (index === -1) {
           // New!
           this.createTouch(sid)
@@ -151,12 +159,12 @@ TuioToTouch.prototype.parseTUIO = function parseTUIO (bundle) {
       }
 
       // Leftovers are dead
-      for (let sid of prevIds) {
+      for (const sid of prevIds) {
         this.touches[sid].alive = false
       }
     } else if (type === 'set') {
-      let sid = msg[2]
-      let touch = this.touches[sid] || this.createTouch(sid)
+      const sid = msg[2]
+      const touch = this.touches[sid] || this.createTouch(sid)
 
       // Set Previous
       touch.prevTUIOX = touch.TUIOX
