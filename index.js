@@ -124,8 +124,9 @@ TuioToTouch.prototype.createTouch = function createTouch (sid) {
 const is2Dcur = /2Dcur$/
 
 TuioToTouch.prototype.parseTUIO = function parseTUIO (bundle) {
+  const { elements } = bundle
   let fseq = 0
-  for (const msg of bundle) {
+  for (const msg of elements) {
     if (msg[1].toLowerCase() !== 'fseq') continue
 
     fseq = msg[2]
@@ -135,7 +136,7 @@ TuioToTouch.prototype.parseTUIO = function parseTUIO (bundle) {
   if (fseq <= this.fseq) return
   this.fseq = fseq
 
-  for (const msg of bundle) {
+  for (const msg of elements) {
     const type = msg[1].toLowerCase()
 
     // Skip if not 2Dcur
