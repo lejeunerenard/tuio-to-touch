@@ -100,25 +100,25 @@ test('TuioToTouch', (t) => {
   })
 
   t.test('adjusts coordinates', async (t) => {
-    const width = 320
-    const height = 240
+    const width = 1000
+    const height = 750
 
     const tuioX = 0.5
-    const tuioY = 0.7
+    const tuioY = 0.1
 
-    const t2t = new TuioToTouch(width, height)
+    const t2t = new TuioToTouch(width, height, { x: 123, y: 456 })
 
     // First touch
     const gotTouchStart = onceEvent('touchstart', (event) => {
       const { touches } = event
       const touch = touches[0]
 
-      t.equal(touch.screenX, width * tuioX, 'screenX')
-      t.equal(touch.screenY, height * tuioY, 'screenY')
-      t.equal(touch.clientX, width * tuioX, 'clientX')
-      t.equal(touch.clientY, height * tuioY, 'clientY')
-      t.equal(touch.pageX, width * tuioX, 'pageX')
-      t.equal(touch.pageY, height * tuioY, 'pageY')
+      t.equal(touch.screenX, width * tuioX + 123, 'screenX')
+      t.equal(touch.screenY, height * tuioY + 456, 'screenY')
+      t.equal(touch.clientX, width * tuioX + 123, 'clientX')
+      t.equal(touch.clientY, height * tuioY + 456, 'clientY')
+      t.equal(touch.pageX, width * tuioX + 123, 'pageX')
+      t.equal(touch.pageY, height * tuioY + 456, 'pageY')
     })
 
     t2t.parseTUIO({
