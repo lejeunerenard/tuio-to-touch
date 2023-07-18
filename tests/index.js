@@ -142,4 +142,62 @@ test('TuioToTouch', (t) => {
 
     await gotTouchStart
   })
+
+  t.test('skips old tuio events', async (t) => {
+    t.plan(2)
+    const t2t = new TuioToTouch(100, 100)
+
+    // First touch
+    const gotTouchStart = onceEvent('touchstart', (event) => {
+      t.equal(event.touches[0].clientX, 50, 'got correct X')
+      t.equal(event.touches[0].clientY, 50, 'got correct Y')
+    })
+
+    // Faster fire
+    t2t.parseTUIO({
+      elements: [
+        ['/tuio/2Dcur', 'source', 'TuioPad@10.0.0.1'],
+        ['/tuio/2Dcur', 'alive', 12],
+        [
+          '/tuio/2Dcur',
+          'set',
+          12,
+          0.5,
+          0.5,
+          0,
+          0,
+          0
+        ],
+        ['/tuio/2Dcur', 'fseq', 3]
+      ],
+      oscType: 'bundle'
+    })
+
+    const gotTouchStart2 = onceEvent('touchstart', (event) => {
+      t.fail('should never get two touch starts')
+    })
+
+    // Slow fire
+    t2t.parseTUIO({
+      elements: [
+        ['/tuio/2Dcur', 'source', 'TuioPad@10.0.0.1'],
+        ['/tuio/2Dcur', 'alive', 10],
+        [
+          '/tuio/2Dcur',
+          'set',
+          10,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        ['/tuio/2Dcur', 'fseq', 1]
+      ],
+      oscType: 'bundle'
+    })
+
+    await gotTouchStart
+    await gotTouchStart2
+  })
 })
