@@ -1,3 +1,9 @@
+import debug from 'debug'
+
+const d = {
+  log: debug('tuio-to-touch')
+}
+
 const RADIUS = 5
 
 module.exports = TuioToTouch
@@ -10,13 +16,13 @@ function TuioToTouch (width = window.innerWidth, height = window.innerHeight, of
   this.offset = offset
   this.width = width
   this.height = height
-  console.log('tuio2touch offset', this.offset, 'width', this.width, 'height', this.height)
+  d.log('tuio2touch offset', this.offset, 'width', this.width, 'height', this.height)
 }
 
 TuioToTouch.prototype.coerceToBrowserTouch = function coerceToBrowserTouch (touch) {
   let clientX = this.width * touch.TUIOX + this.offset.x
   let clientY = this.height * touch.TUIOY + this.offset.y
-  console.log('tuio2touch client', clientX, clientY)
+  d.log('tuio2touch client', clientX, clientY)
 
   // Page is offset from client
   let pageX = window.pageXOffset + clientX
