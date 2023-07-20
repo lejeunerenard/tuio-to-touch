@@ -10,7 +10,7 @@ function TuioToTouch (width = window.innerWidth, height = window.innerHeight, of
   this.touches = {}
   this.prevTouches = {}
 
-  this.fseq = 0
+  this.fseq = {}
   this.offset = offset
   this.width = width
   this.height = height
@@ -126,15 +126,15 @@ const is2Dcur = /2Dcur$/
 TuioToTouch.prototype.parseTUIO = function parseTUIO (bundle) {
   const { elements } = bundle
   let fseq = 0
-  for (const msg of elements) {
-    if (msg[1].toLowerCase() !== 'fseq') continue
 
-    fseq = msg[2]
-    break
-  }
+  const sourceMsg = elements[0]
+  const source = sourceMsg[1] === 'source' ? sourceMsg[2] : '_default'
 
-  if (fseq <= this.fseq) return
-  this.fseq = fseq
+  const fseqMsg = elements[elements.length - 1]
+  fseq = fseqMsg[2]
+
+  if (fseq <= (this.fseq[source] || 0)) return
+  this.fseq[source] = fseq
 
   for (const msg of elements) {
     const type = msg[1].toLowerCase()

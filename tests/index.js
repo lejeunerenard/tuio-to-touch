@@ -2,14 +2,29 @@ const test = require('tape')
 const { TuioToTouch } = require('../index.js')
 
 function onceEvent (event, eventCb) {
-  return new Promise((resolve) => {
-    const handler = (...args) => {
-      eventCb(...args)
-      window.removeEventListener(event, handler)
-      resolve()
-    }
-    window.addEventListener(event, handler)
-  })
+  let handler
+  const clearHandler = () => {
+    window.removeEventListener(event, handler)
+  }
+
+  return [
+    new Promise((resolve, reject) => {
+      let timer = null
+      handler = (...args) => {
+        eventCb(...args)
+        clearHandler()
+        clearTimeout(timer)
+        resolve()
+      }
+      window.addEventListener(event, handler)
+
+      timer = setTimeout(() => {
+        clearHandler()
+        reject(Error(`Event [${event}] never fired`))
+      }, 1 * 1000)
+    }).finally(clearHandler),
+    clearHandler
+  ]
 }
 
 test('TuioToTouch', (t) => {
@@ -30,7 +45,7 @@ test('TuioToTouch', (t) => {
     t.equal(Object.keys(t2t.touches).length, 0)
 
     // First touch
-    const gotTouchStart = onceEvent('touchstart', (touch) => {
+    const [gotTouchStart] = onceEvent('touchstart', (touch) => {
       t.pass('got touchstart')
     })
 
@@ -57,7 +72,7 @@ test('TuioToTouch', (t) => {
     await gotTouchStart
 
     // Touch move
-    const gotTouchMove = onceEvent('touchmove', (touch) => {
+    const [gotTouchMove] = onceEvent('touchmove', (touch) => {
       t.pass('got touchmove')
     })
     t2t.parseTUIO({
@@ -83,7 +98,7 @@ test('TuioToTouch', (t) => {
     await gotTouchMove
 
     // Touch end
-    const gotTouchEnd = onceEvent('touchend', (touch) => {
+    const [gotTouchEnd] = onceEvent('touchend', (touch) => {
       t.pass('got touchend')
     })
     t2t.parseTUIO({
@@ -109,7 +124,7 @@ test('TuioToTouch', (t) => {
     const t2t = new TuioToTouch(width, height, { x: 123, y: 456 })
 
     // First touch
-    const gotTouchStart = onceEvent('touchstart', (event) => {
+    const [gotTouchStart] = onceEvent('touchstart', (event) => {
       const { touches } = event
       const touch = touches[0]
 
@@ -148,7 +163,7 @@ test('TuioToTouch', (t) => {
     const t2t = new TuioToTouch(100, 100)
 
     // First touch
-    const gotTouchStart = onceEvent('touchstart', (event) => {
+    const [gotTouchStart] = onceEvent('touchstart', (event) => {
       t.equal(event.touches[0].clientX, 50, 'got correct X')
       t.equal(event.touches[0].clientY, 50, 'got correct Y')
     })
@@ -173,7 +188,7 @@ test('TuioToTouch', (t) => {
       oscType: 'bundle'
     })
 
-    const gotTouchStart2 = onceEvent('touchstart', (event) => {
+    const [, clearHandler] = onceEvent('touchstart', (event) => {
       t.fail('should never get two touch starts')
     })
 
@@ -181,6 +196,68 @@ test('TuioToTouch', (t) => {
     t2t.parseTUIO({
       elements: [
         ['/tuio/2Dcur', 'source', 'TuioPad@10.0.0.1'],
+        ['/tuio/2Dcur', 'alive', 10],
+        [
+          '/tuio/2Dcur',
+          'set',
+          10,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        ['/tuio/2Dcur', 'fseq', 1]
+      ],
+      oscType: 'bundle'
+    })
+
+    await gotTouchStart
+    clearHandler()
+  })
+
+  t.test('dont skip frames from different source', async (t) => {
+    t.plan(4)
+    const t2t = new TuioToTouch(100, 100)
+
+    const source1 = 'TuioPad@10.0.0.1'
+    const source2 = 'TuioPad@10.0.0.9'
+
+    // First touch
+    const [gotTouchStart] = onceEvent('touchstart', (event) => {
+      t.equal(event.touches[0].clientX, 50, 'got correct X')
+      t.equal(event.touches[0].clientY, 50, 'got correct Y')
+    })
+
+    // Source 1 w/ later fseq
+    t2t.parseTUIO({
+      elements: [
+        ['/tuio/2Dcur', 'source', source1],
+        ['/tuio/2Dcur', 'alive', 12],
+        [
+          '/tuio/2Dcur',
+          'set',
+          12,
+          0.5,
+          0.5,
+          0,
+          0,
+          0
+        ],
+        ['/tuio/2Dcur', 'fseq', 1000]
+      ],
+      oscType: 'bundle'
+    })
+
+    const [gotTouchStart2] = onceEvent('touchstart', (event) => {
+      t.equal(event.touches[0].clientX, 0, 'got 2nd X')
+      t.equal(event.touches[0].clientY, 0, 'got 2nd Y')
+    })
+
+    // Source 2 w/ earlier fseq
+    t2t.parseTUIO({
+      elements: [
+        ['/tuio/2Dcur', 'source', source2],
         ['/tuio/2Dcur', 'alive', 10],
         [
           '/tuio/2Dcur',
