@@ -11,6 +11,7 @@ function TuioToTouch (width = window.innerWidth, height = window.innerHeight, of
   this.prevTouches = {}
 
   this.fseq = {}
+  this.seenSources = []
   this.offset = offset
   this.width = width
   this.height = height
@@ -45,6 +46,16 @@ TuioToTouch.prototype.coerceToBrowserTouch = function coerceToBrowserTouch (touc
   touch.target = browserTouch.target
 
   return browserTouch
+}
+
+TuioToTouch.prototype.getSID = function getSID (source, id) {
+  const index = this.seenSources.indexOf(source)
+  if (index === -1) throw Error('Received a getSID with an unknown source!')
+
+  // 18 bit shift is psuedo arbitrary. I tried to split the binary size of js
+  // numbers in half so the id could be the source's id prefixed with the index
+  // of the seen source to make it unique.
+  return index << 18 ^ id
 }
 
 TuioToTouch.prototype.createTouchEvent = function createTouchEvent (type, touches) {
@@ -136,6 +147,9 @@ TuioToTouch.prototype.parseTUIO = function parseTUIO (bundle) {
   if (fseq <= (this.fseq[source] || 0)) return
   this.fseq[source] = fseq
 
+  // Set source as seen assigning a sid prefix for it then
+  if (this.seenSources.indexOf(source) === -1) this.seenSources.push(source)
+
   for (const msg of elements) {
     const type = msg[1].toLowerCase()
 
@@ -146,7 +160,8 @@ TuioToTouch.prototype.parseTUIO = function parseTUIO (bundle) {
       const prevIds = Object.keys(this.touches)
 
       const sIds = msg.slice(2)
-      for (const sid of sIds) {
+      for (const sourceId of sIds) {
+        const sid = this.getSID(source, sourceId)
         const index = prevIds.indexOf('' + sid)
         if (index === -1) {
           // New!
@@ -162,7 +177,7 @@ TuioToTouch.prototype.parseTUIO = function parseTUIO (bundle) {
         this.touches[sid].alive = false
       }
     } else if (type === 'set') {
-      const sid = msg[2]
+      const sid = this.getSID(source, msg[2])
       const touch = this.touches[sid] || this.createTouch(sid)
 
       // Set Previous

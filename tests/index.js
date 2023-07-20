@@ -77,7 +77,7 @@ test('TuioToTouch', (t) => {
     })
     t2t.parseTUIO({
       elements: [
-        ['/tuio/2Dcur', 'source', 'TuioPad@10.0.0.151'],
+        ['/tuio/2Dcur', 'source', 'TuioPad@10.0.0.1'],
         ['/tuio/2Dcur', 'alive', 12],
         [
           '/tuio/2Dcur',
@@ -103,7 +103,7 @@ test('TuioToTouch', (t) => {
     })
     t2t.parseTUIO({
       elements: [
-        ['/tuio/2Dcur', 'source', 'TuioPad@10.0.0.151'],
+        ['/tuio/2Dcur', 'source', 'TuioPad@10.0.0.1'],
         ['/tuio/2Dcur', 'alive'],
         ['/tuio/2Dcur', 'fseq', 3000]
       ],
