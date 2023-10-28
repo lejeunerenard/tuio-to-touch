@@ -1,5 +1,5 @@
 const test = require('tape')
-const { TuioToTouch } = require('../index.js')
+const { TuioToTouch, dimensionsToFakeElement } = require('../index.js')
 
 function onceEvent (event, eventCb) {
   let handler
@@ -31,7 +31,7 @@ test('TuioToTouch', (t) => {
   t.test('touch lifecycle', async (t) => {
     t.plan(7)
 
-    const t2t = new TuioToTouch(100, 100)
+    const t2t = new TuioToTouch(dimensionsToFakeElement(100, 100))
 
     // 'Alive' messages
     t2t.parseTUIO({
@@ -121,7 +121,7 @@ test('TuioToTouch', (t) => {
     const tuioX = 0.5
     const tuioY = 0.1
 
-    const t2t = new TuioToTouch(width, height, { x: 123, y: 456 })
+    const t2t = new TuioToTouch(dimensionsToFakeElement(width, height, { x: 123, y: 456 }))
 
     // First touch
     const [gotTouchStart] = onceEvent('touchstart', (event) => {
@@ -160,7 +160,7 @@ test('TuioToTouch', (t) => {
 
   t.test('skips old tuio events', async (t) => {
     t.plan(2)
-    const t2t = new TuioToTouch(100, 100)
+    const t2t = new TuioToTouch(dimensionsToFakeElement(100, 100))
 
     // First touch
     const [gotTouchStart] = onceEvent('touchstart', (event) => {
@@ -218,7 +218,7 @@ test('TuioToTouch', (t) => {
 
   t.test('dont skip frames from different source', async (t) => {
     t.plan(4)
-    const t2t = new TuioToTouch(100, 100)
+    const t2t = new TuioToTouch(dimensionsToFakeElement(100, 100))
 
     const source1 = 'TuioPad@10.0.0.1'
     const source2 = 'TuioPad@10.0.0.9'

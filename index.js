@@ -6,31 +6,54 @@ const d = {
 
 const RADIUS = 5
 
-function TuioToTouch (width = window.innerWidth, height = window.innerHeight, offset = { x: 0, y: 0 }) {
+function TuioToTouch (referenceElement) {
   this.touches = {}
   this.prevTouches = {}
 
+  this.referenceElement = referenceElement
   this.fseq = {}
   this.seenSources = []
-  this.offset = offset
-  this.width = width
-  this.height = height
-  d.log('tuio2touch offset', this.offset, 'width', this.width, 'height', this.height)
+  // d.log('tuio2touch offset', this.offset, 'width', this.width, 'height', this.height)
 }
 
 TuioToTouch.prototype.coerceToBrowserTouch = function coerceToBrowserTouch (touch) {
-  const clientX = this.width * touch.TUIOX + this.offset.x
-  const clientY = this.height * touch.TUIOY + this.offset.y
+  const boundingRect = this.referenceElement.getBoundingClientRect()
+
+  const clientX = boundingRect.width * touch.TUIOX + boundingRect.x
+  const clientY = boundingRect.height * touch.TUIOY + boundingRect.y
   d.log('tuio2touch client', clientX, clientY)
 
+  // Calculate elements relative position to the document
+  // source: https://stackoverflow.com/a/26230989/630490
+  const body = document.body
+  const docEl = document.documentElement
+
+  const scrollTop = window.pageYOffset || docEl.scrollTop || body.scrollTop
+  const scrollLeft = window.pageXOffset || docEl.scrollLeft || body.scrollLeft
+
+  const clientTop = docEl.clientTop || body.clientTop || 0
+  const clientLeft = docEl.clientLeft || body.clientLeft || 0
+
+  const elRelativeToDocument = {
+    x: boundingRect.left + scrollLeft - clientLeft,
+    y: boundingRect.top + scrollTop - clientTop
+  }
+
+  const touchRelativeToEl = {
+    x: this.referenceElement.offsetWidth * touch.TUIOX,
+    y: this.referenceElement.offsetHeight * touch.TUIOY
+  }
+
   // Page is offset from client
-  const pageX = window.pageXOffset + clientX
-  const pageY = window.pageYOffset + clientY
+  const pageX = elRelativeToDocument.x + touchRelativeToEl.x
+  const pageY = elRelativeToDocument.y + touchRelativeToEl.y
   const screenX = pageX
   const screenY = pageY
 
+  console.log('pageX', pageX, 'pageY', pageY, 'clientX', clientX, 'clientY', clientY)
+
   const browserTouch = new Touch({
-    target: touch.target || document.elementFromPoint(pageX, pageY) || document.documentElement,
+    target: touch.target || document.elementFromPoint(clientX, clientY) || document.documentElement,
     identifier: touch.sid,
     clientX,
     clientY,
@@ -196,4 +219,26 @@ TuioToTouch.prototype.parseTUIO = function parseTUIO (bundle) {
   this.updateEvents()
 }
 
-module.exports = { TuioToTouch }
+function dimensionsToFakeElement (width, height, offset = { x: 0, y: 0 }) {
+  return {
+    get offsetWidth () {
+      return width
+    },
+    get offsetHeight () {
+      return height
+    },
+    getBoundingClientRect () {
+      return {
+        x: offset.x,
+        y: offset.y,
+        width, // think about this as this might be different than original width
+        height,
+        // TODO lookup if this is ever not equal to x,y
+        left: offset.x,
+        top: offset.y
+      }
+    }
+  }
+}
+
+module.exports = { TuioToTouch, dimensionsToFakeElement }
