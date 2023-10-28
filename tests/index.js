@@ -28,6 +28,7 @@ function onceEvent (event, eventCb) {
 }
 
 function clearBody () {
+  window.scrollTo(0, 0)
   document.body.style.margin = '0'
   ;[...document.body.children].forEach((c) => c.parentNode.removeChild(c))
 }
@@ -212,6 +213,77 @@ test('TuioToTouch', (t) => {
         t.equal(touch.clientY, height * tuioY + 456 - scrollPos[1], 'clientY')
         t.equal(touch.pageX, width * tuioX + 123, 'pageX')
         t.equal(touch.pageY, height * tuioY + 456, 'pageY')
+      })
+
+      t2t.parseTUIO({
+        elements: [
+          ['/tuio/2Dcur', 'source', 'TuioPad@10.0.0.1'],
+          ['/tuio/2Dcur', 'alive', 12],
+          [
+            '/tuio/2Dcur',
+            'set',
+            12,
+            tuioX,
+            tuioY,
+            0,
+            0,
+            0
+          ],
+          ['/tuio/2Dcur', 'fseq', 2390]
+        ],
+        oscType: 'bundle'
+      })
+
+      await gotTouchStart
+    })
+
+    t.test('w/ transform scaling', async (t) => {
+      const width = 1000
+      const height = 750
+      const offset = { x: 123, y: 456 }
+
+      const tuioX = 0.5
+      const tuioY = 0.1
+
+      const fillDimensions = {
+        width: window.innerWidth * 2,
+        height: window.innerHeight * 2
+      }
+
+      clearBody()
+
+      const fillSpaceElement = document.createElement('div')
+      fillSpaceElement.style.width = fillDimensions.width + 'px'
+      fillSpaceElement.style.height = fillDimensions.height + 'px'
+      fillSpaceElement.style.background = 'blue'
+
+      document.body.appendChild(fillSpaceElement)
+
+      // Element TUIO Mapped to
+      const tuioMap = document.createElement('div')
+      tuioMap.style.width = width + 'px'
+      tuioMap.style.height = height + 'px'
+      tuioMap.style.position = 'absolute'
+      tuioMap.style.left = offset.x + 'px'
+      tuioMap.style.top = offset.y + 'px'
+      tuioMap.style.transformOrigin = 'left top'
+      tuioMap.style.transform = 'scale(50%, 50%)'
+      tuioMap.style.background = 'red'
+      document.body.appendChild(tuioMap)
+
+      const t2t = new TuioToTouch(tuioMap)
+
+      // First touch
+      const [gotTouchStart] = onceEvent('touchstart', (event) => {
+        const { touches } = event
+        const touch = touches[0]
+
+        t.equal(touch.screenX, 0.5 * width * tuioX + 123, 'screenX')
+        t.equal(touch.screenY, 0.5 * height * tuioY + 456, 'screenY')
+        t.equal(touch.clientX, 0.5 * width * tuioX + 123, 'clientX')
+        t.equal(touch.clientY, 0.5 * height * tuioY + 456, 'clientY')
+        t.equal(touch.pageX, 0.5 * width * tuioX + 123, 'pageX')
+        t.equal(touch.pageY, 0.5 * height * tuioY + 456, 'pageY')
       })
 
       t2t.parseTUIO({

@@ -19,8 +19,13 @@ function TuioToTouch (referenceElement) {
 TuioToTouch.prototype.coerceToBrowserTouch = function coerceToBrowserTouch (touch) {
   const boundingRect = this.referenceElement.getBoundingClientRect()
 
-  const clientX = boundingRect.width * touch.TUIOX + boundingRect.x
-  const clientY = boundingRect.height * touch.TUIOY + boundingRect.y
+  const touchRelativeToEl = {
+    x: boundingRect.width * touch.TUIOX,
+    y: boundingRect.height * touch.TUIOY
+  }
+
+  const clientX = touchRelativeToEl.x + boundingRect.x
+  const clientY = touchRelativeToEl.y + boundingRect.y
   d.log('tuio2touch client', clientX, clientY)
 
   // Calculate elements relative position to the document
@@ -37,11 +42,6 @@ TuioToTouch.prototype.coerceToBrowserTouch = function coerceToBrowserTouch (touc
   const elRelativeToDocument = {
     x: boundingRect.left + scrollLeft - clientLeft,
     y: boundingRect.top + scrollTop - clientTop
-  }
-
-  const touchRelativeToEl = {
-    x: this.referenceElement.offsetWidth * touch.TUIOX,
-    y: this.referenceElement.offsetHeight * touch.TUIOY
   }
 
   // Page is offset from client
