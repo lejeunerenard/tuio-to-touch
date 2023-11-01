@@ -428,4 +428,61 @@ test('TuioToTouch', (t) => {
     await gotTouchStart
     await gotTouchStart2
   })
+
+  t.test('parses normal messages', async (t) => {
+    t.plan(4)
+    const t2t = new TuioToTouch(dimensionsToFakeElement(100, 100))
+
+    const source1 = 'TuioPad@10.0.0.1'
+    const source2 = 'TuioPad@10.0.0.9'
+
+    // First touch
+    const [gotTouchStart] = onceEvent('touchstart', (event) => {
+      t.equal(event.touches[0].clientX, 50, 'got correct X')
+      t.equal(event.touches[0].clientY, 50, 'got correct Y')
+    })
+
+    // Source 1 w/ later fseq
+    t2t.parseTUIO(['/tuio/2Dcur', 'source', source1])
+    t2t.parseTUIO(['/tuio/2Dcur', 'alive', 12])
+    t2t.parseTUIO([
+      '/tuio/2Dcur',
+      'set',
+      12,
+      0.5,
+      0.5,
+      0,
+      0,
+      0
+    ])
+    t2t.parseTUIO(['/tuio/2Dcur', 'fseq', 1000])
+
+    const [gotTouchStart2] = onceEvent('touchstart', (event) => {
+      t.equal(event.touches[0].clientX, 0, 'got 2nd X')
+      t.equal(event.touches[0].clientY, 0, 'got 2nd Y')
+    })
+
+    // Source 2 w/ earlier fseq & using bundle
+    t2t.parseTUIO({
+      elements: [
+        ['/tuio/2Dcur', 'source', source2],
+        ['/tuio/2Dcur', 'alive', 10],
+        [
+          '/tuio/2Dcur',
+          'set',
+          10,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        ['/tuio/2Dcur', 'fseq', 1]
+      ],
+      oscType: 'bundle'
+    })
+
+    await gotTouchStart
+    await gotTouchStart2
+  })
 })

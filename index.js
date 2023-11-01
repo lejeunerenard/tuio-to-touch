@@ -13,6 +13,8 @@ function TuioToTouch (referenceElement) {
   this.referenceElement = referenceElement
   this.fseq = {}
   this.seenSources = []
+  this.messagePreBundles = {}
+  this.currentPreBundleSource = ''
   // d.log('tuio2touch offset', this.offset, 'width', this.width, 'height', this.height)
 }
 
@@ -157,7 +159,7 @@ TuioToTouch.prototype.createTouch = function createTouch (sid) {
 
 const is2Dcur = /2Dcur$/
 
-TuioToTouch.prototype.parseTUIO = function parseTUIO (bundle) {
+TuioToTouch.prototype.parseBundle = function parseBundle (bundle) {
   const { elements } = bundle
   let fseq = 0
 
@@ -215,8 +217,40 @@ TuioToTouch.prototype.parseTUIO = function parseTUIO (bundle) {
       touch.TUIOVY = msg[6]
     }
   }
+}
 
-  this.updateEvents()
+TuioToTouch.prototype.registerMessage = function registerMessage (msg) {
+  // Skip if not 2Dcur
+  if (!msg[0].match(is2Dcur)) return
+
+  switch (msg[1]) {
+    case 'source':
+      this.currentPreBundleSource = msg[2]
+      this.messagePreBundles[this.currentPreBundleSource] = []
+      this.messagePreBundles[this.currentPreBundleSource].push(msg)
+      break
+    case 'set':
+    case 'alive':
+      this.messagePreBundles[this.currentPreBundleSource].push(msg)
+      break
+    case 'fseq':
+      this.messagePreBundles[this.currentPreBundleSource].push(msg)
+      // Parse as bundle now that everything is received
+      this.parseBundle({ elements: this.messagePreBundles[this.currentPreBundleSource] })
+      this.updateEvents()
+      this.currentPreBundleSource = ''
+      break
+  }
+}
+
+TuioToTouch.prototype.parseTUIO = function parseTUIO (data) {
+  if ('elements' in data) {
+    this.parseBundle(data)
+    this.updateEvents()
+  } else {
+    // Build up bundle one message at a time
+    this.registerMessage(data)
+  }
 }
 
 function dimensionsToFakeElement (width, height, offset = { x: 0, y: 0 }) {
