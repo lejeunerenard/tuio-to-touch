@@ -231,9 +231,11 @@ TuioToTouch.prototype.registerMessage = function registerMessage (msg) {
       break
     case 'set':
     case 'alive':
+      if (!this.currentPreBundleSource) return
       this.messagePreBundles[this.currentPreBundleSource].push(msg)
       break
     case 'fseq':
+      if (!this.currentPreBundleSource) return
       this.messagePreBundles[this.currentPreBundleSource].push(msg)
       // Parse as bundle now that everything is received
       this.parseBundle({ elements: this.messagePreBundles[this.currentPreBundleSource] })

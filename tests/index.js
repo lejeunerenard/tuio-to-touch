@@ -485,4 +485,26 @@ test('TuioToTouch', (t) => {
     await gotTouchStart
     await gotTouchStart2
   })
+
+  t.test('ignore sourceless messages', (t) => {
+    const t2t = new TuioToTouch(dimensionsToFakeElement(100, 100))
+
+    // Source 1 w/ later fseq
+    t2t.parseTUIO(['/tuio/2Dcur', 'alive', 12])
+    t2t.parseTUIO([
+      '/tuio/2Dcur',
+      'set',
+      12,
+      0.5,
+      0.5,
+      0,
+      0,
+      0
+    ])
+    t2t.parseTUIO(['/tuio/2Dcur', 'fseq', 1000])
+
+    t.equal(t2t.currentPreBundleSource, '', 'doesnt set current source')
+    t.deepEquals(t2t.messagePreBundles, {}, 'doesnt store messages')
+    t.end()
+  })
 })
