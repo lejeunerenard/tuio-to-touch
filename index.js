@@ -52,7 +52,7 @@ TuioToTouch.prototype.coerceToBrowserTouch = function coerceToBrowserTouch (touc
   const screenX = pageX
   const screenY = pageY
 
-  console.log('pageX', pageX, 'pageY', pageY, 'clientX', clientX, 'clientY', clientY)
+  d.log('pageX', pageX, 'pageY', pageY, 'clientX', clientX, 'clientY', clientY)
 
   const browserTouch = new Touch({
     target: touch.target || document.elementFromPoint(clientX, clientY) || document.documentElement,
