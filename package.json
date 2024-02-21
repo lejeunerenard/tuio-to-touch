@@ -1,7 +1,7 @@
 {
-  "name": "tuio-to-touch",
-  "version": "1.1.0",
-  "description": "",
+  "name": "@lejeunerenard/tuio-to-touch",
+  "version": "1.5.1",
+  "description": "Convert TUIO messages to TouchEvents.",
   "main": "index.js",
   "scripts": {
     "lint": "eslint '**/*.js'",
