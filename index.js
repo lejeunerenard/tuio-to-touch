@@ -84,14 +84,20 @@ TuioToTouch.prototype.getSID = function getSID (source, id) {
 }
 
 TuioToTouch.prototype.createTouchEvent = function createTouchEvent (type, touches) {
-  const allTouches = Object.values(this.touches).map((touch) => this.coerceToBrowserTouch(touch))
-  const browserTouches = touches.map((touch) => this.coerceToBrowserTouch(touch))
+  const coerce = this.coerceToBrowserTouch.bind(this)
+  const allTouches = Object.values(this.touches).map(coerce)
+  // Touches might need to coerce a touch not in this.touches for touchend
+  // events
+  const browserTouches = touches.map((touch) =>
+    // Use existing Touch object
+    allTouches.find((otherTouch) => otherTouch.identifier === touch.sid) ||
+    // or Make a new one
+    coerce(touch))
 
   // Ensure targets are assigned before this via coerceToBrowserTouch
   const target = touches[0].target
-  const targetTouches = Object.values(this.touches)
+  const targetTouches = allTouches
     .filter((touch) => touch.target === target)
-    .map((touch) => this.coerceToBrowserTouch(touch))
 
   const touchEvent = new TouchEvent(type, {
     cancelable: true,
