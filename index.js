@@ -84,12 +84,12 @@ TuioToTouch.prototype.getSID = function getSID (source, id) {
 }
 
 TuioToTouch.prototype.createTouchEvent = function createTouchEvent (type, touches) {
-  const allTouches = Object.keys(this.touches).map((sid) => this.coerceToBrowserTouch(this.touches[sid]))
+  const allTouches = Object.values(this.touches).map((touch) => this.coerceToBrowserTouch(touch))
   const browserTouches = touches.map((touch) => this.coerceToBrowserTouch(touch))
 
   // Ensure targets are assigned before this via coerceToBrowserTouch
   const target = touches[0].target
-  const targetTouches = Object.keys(this.touches).map((sid) => this.touches[sid])
+  const targetTouches = Object.values(this.touches)
     .filter((touch) => touch.target === target)
     .map((touch) => this.coerceToBrowserTouch(touch))
 
