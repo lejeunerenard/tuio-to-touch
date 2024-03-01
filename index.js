@@ -125,7 +125,7 @@ TuioToTouch.prototype.updateEvents = function updateEvents () {
     } else if (touch.new) {
       touch.new = false
       startTouches.push(touch)
-    } else if (touch.TUIOX !== touch.prevTUIOX && touch.TUIOY !== touch.prevTUIOY) {
+    } else if (touch.TUIOX !== touch.prevTUIOX || touch.TUIOY !== touch.prevTUIOY) {
       moveTouches.push(touch)
     }
   }

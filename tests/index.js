@@ -34,6 +34,13 @@ function clearBody () {
 }
 
 test('TuioToTouch', (t) => {
+  t.test('updateEvents', (t) => {
+    t.test('moves if only x or only y changes', { todo: true }, (t) => {
+      // TODO write a test
+      t.end()
+    })
+  })
+
   t.test('touch lifecycle', async (t) => {
     t.plan(7)
 
