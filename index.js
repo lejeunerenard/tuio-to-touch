@@ -96,19 +96,26 @@ TuioToTouch.prototype.createTouchEvent = function createTouchEvent (type, touche
     coerce(touch))
 
   // Ensure targets are assigned before this via coerceToBrowserTouch
-  const target = touches[0].target
-  const targetTouches = allTouches
-    .filter((touch) => touch.target === target)
+  const seenTargets = new WeakMap()
+  for (const touch of touches) {
+    const target = touch.target
+    if (seenTargets.has(target)) continue
 
-  const touchEvent = new TouchEvent(type, {
-    cancelable: true,
-    bubbles: true,
-    composed: true,
-    touches: allTouches,
-    targetTouches,
-    changedTouches: browserTouches
-  })
-  target.dispatchEvent(touchEvent)
+    const targetTouches = allTouches
+      .filter((touch) => touch.target === target)
+
+    const touchEvent = new TouchEvent(type, {
+      cancelable: true,
+      bubbles: true,
+      composed: true,
+      touches: allTouches,
+      targetTouches,
+      changedTouches: browserTouches
+    })
+    const dispatchTarget = document.contains(target) ? target : this.referenceElement
+    dispatchTarget.dispatchEvent(touchEvent)
+    seenTargets.set(target)
+  }
 }
 
 TuioToTouch.prototype.updateEvents = function updateEvents () {
@@ -174,13 +181,12 @@ const is2Dcur = /2Dcur$/
 
 TuioToTouch.prototype.parseBundle = function parseBundle (bundle) {
   const { elements } = bundle
-  let fseq = 0
 
   const sourceMsg = elements[0]
   const source = sourceMsg[1] === 'source' ? sourceMsg[2] : '_default'
 
   const fseqMsg = elements[elements.length - 1]
-  fseq = fseqMsg[2]
+  const fseq = fseqMsg[2]
 
   if (fseq <= (this.fseq[source] || 0)) {
     d.bundle('skip bundle. fseq is behind', 'fseq', fseq, 'source', source, 'this.fseq[source]', this.fseq[source])
