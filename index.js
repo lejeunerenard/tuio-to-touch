@@ -1,7 +1,8 @@
 const debug = require('debug')
 
 const d = {
-  log: debug('tuio-to-touch')
+  log: debug('tuio-to-touch'),
+  bundle: debug('tuio-to-touch:bundle')
 }
 
 const RADIUS = 5
@@ -121,12 +122,17 @@ TuioToTouch.prototype.updateEvents = function updateEvents () {
 
     if (!touch.alive) {
       delete this.touches[sid]
+      d.log('[updateEvents] marked as end', sid)
       endTouches.push(touch)
     } else if (touch.new) {
       touch.new = false
+      d.log('[updateEvents] marked as start', sid)
       startTouches.push(touch)
     } else if (touch.TUIOX !== touch.prevTUIOX || touch.TUIOY !== touch.prevTUIOY) {
+      d.log('[updateEvents] marked as move', sid)
       moveTouches.push(touch)
+    } else {
+      d.log('[updateEvents] touch didnt change', 'sid', sid, 'touch', JSON.stringify(touch, null, 2))
     }
   }
 
@@ -147,6 +153,7 @@ TuioToTouch.prototype.updateEvents = function updateEvents () {
 }
 
 TuioToTouch.prototype.createTouch = function createTouch (sid) {
+  d.log('createTouch', sid)
   this.touches[sid] = {
     alive: true,
     new: true,
@@ -175,7 +182,10 @@ TuioToTouch.prototype.parseBundle = function parseBundle (bundle) {
   const fseqMsg = elements[elements.length - 1]
   fseq = fseqMsg[2]
 
-  if (fseq <= (this.fseq[source] || 0)) return
+  if (fseq <= (this.fseq[source] || 0)) {
+    d.bundle('skip bundle. fseq is behind', 'fseq', fseq, 'source', source, 'this.fseq[source]', this.fseq[source])
+    return
+  }
   this.fseq[source] = fseq
 
   // Set source as seen assigning a sid prefix for it then
@@ -183,9 +193,13 @@ TuioToTouch.prototype.parseBundle = function parseBundle (bundle) {
 
   for (const msg of elements) {
     const type = msg[1].toLowerCase()
+    d.bundle('processing msg', msg)
 
     // Skip if not 2Dcur
-    if (!msg[0].match(is2Dcur)) continue
+    if (!msg[0].match(is2Dcur)) {
+      d.bundle('skip msg because not 2Dcur')
+      continue
+    }
 
     if (type === 'alive') {
       const prevIds = Object.keys(this.touches)
@@ -196,20 +210,25 @@ TuioToTouch.prototype.parseBundle = function parseBundle (bundle) {
         const index = prevIds.indexOf('' + sid)
         if (index === -1) {
           // New!
+          d.bundle('create new from alive msg', sid)
           this.createTouch(sid)
         } else {
           // Remove from list because alive
+          d.bundle('ack existing alive touch msg', index)
           prevIds.splice(index, 1)
         }
       }
 
       // Leftovers are dead
       for (const sid of prevIds) {
+        d.bundle('sid marked as dead', sid)
         this.touches[sid].alive = false
       }
     } else if (type === 'set') {
       const sid = this.getSID(source, msg[2])
+      d.bundle('set msg', sid)
       const touch = this.touches[sid] || this.createTouch(sid)
+      d.bundle('[set] touch before', touch)
 
       // Set Previous
       touch.prevTUIOX = touch.TUIOX
@@ -221,6 +240,8 @@ TuioToTouch.prototype.parseBundle = function parseBundle (bundle) {
       touch.TUIOY = msg[4]
       touch.TUIOVX = msg[5]
       touch.TUIOVY = msg[6]
+
+      d.bundle('[set] touch after', touch)
     }
   }
 }
