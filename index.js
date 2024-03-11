@@ -7,7 +7,9 @@ const d = {
 
 const RADIUS = 5
 
-function TuioToTouch (referenceElement) {
+function TuioToTouch (referenceElement, opts = {}) {
+  this.bundlePreprocess = opts.bundlePreprocess || ((x) => x)
+
   this.touches = {}
   this.prevTouches = {}
 
@@ -180,7 +182,7 @@ TuioToTouch.prototype.createTouch = function createTouch (sid) {
 const is2Dcur = /2Dcur$/
 
 TuioToTouch.prototype.parseBundle = function parseBundle (bundle) {
-  const { elements } = bundle
+  const { elements } = this.bundlePreprocess(bundle)
 
   const sourceMsg = elements[0]
   const source = sourceMsg[1] === 'source' ? sourceMsg[2] : '_default'

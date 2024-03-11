@@ -89,15 +89,17 @@ test('adjust to region', (t) => {
   t.test('touch lifecycle', async (t) => {
     t.plan(8)
 
-    const t2t = new TuioToTouch(dimensionsToFakeElement(100, 100))
-
     const region = {
       x: 0.25,
       y: 0.25,
       x2: 0.5,
       y2: 0.75
     }
+
     const toRegion = adjustToTuioToRegion(region)
+    const t2t = new TuioToTouch(dimensionsToFakeElement(100, 100), {
+      bundlePreprocess: toRegion
+    })
 
     // 'Alive' messages
     t2t.parseTUIO({
@@ -115,7 +117,7 @@ test('adjust to region', (t) => {
       t.pass('got touchstart')
     })
 
-    const regionBundle = toRegion({
+    t2t.parseTUIO({
       elements: [
         ['/tuio/2Dcur', 'source', 'TuioPad@10.0.0.1'],
         ['/tuio/2Dcur', 'alive', 12, 13],
@@ -143,8 +145,6 @@ test('adjust to region', (t) => {
       ],
       oscType: 'bundle'
     })
-
-    t2t.parseTUIO(regionBundle)
     t.equal(Object.keys(t2t.touches).length, 1, 'created touch object')
 
     await gotTouchStart
@@ -154,10 +154,9 @@ test('adjust to region', (t) => {
       t.pass('got touchmove')
     })
     const [gotTouchStart2] = onceEvent('touchstart', (touch) => {
-      console.log('touch', touch)
       t.pass('got touchstart for second touch point')
     })
-    t2t.parseTUIO(toRegion({
+    t2t.parseTUIO({
       elements: [
         ['/tuio/2Dcur', 'source', 'TuioPad@10.0.0.1'],
         ['/tuio/2Dcur', 'alive', 12, 13],
@@ -184,7 +183,7 @@ test('adjust to region', (t) => {
         ['/tuio/2Dcur', 'fseq', 2796]
       ],
       oscType: 'bundle'
-    }))
+    })
     t.equal(Object.keys(t2t.touches).length, 2, 'adds existing touch as new')
 
     await gotTouchMove
