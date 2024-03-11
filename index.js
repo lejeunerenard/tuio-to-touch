@@ -310,4 +310,49 @@ function dimensionsToFakeElement (width, height, offset = { x: 0, y: 0 }) {
   }
 }
 
-module.exports = { TuioToTouch, dimensionsToFakeElement }
+const adjustToTuioToRegion = ({ x, y, x2, y2 }) => (bundle) => {
+  const { elements } = bundle
+  const keptIds = []
+  const setsRemoved = elements.flatMap((msg) => {
+    const type = msg[1].toLowerCase()
+    d.bundle('removing set msg', msg)
+
+    if (type === 'set') {
+      const id = msg[2]
+      const TUIOX = msg[3]
+      const TUIOY = msg[4]
+      if (TUIOX >= x && TUIOX <= x2 && TUIOY >= y && TUIOY <= y2) {
+        keptIds.push(id)
+        msg[3] = (TUIOX - x) / (x2 - x)
+        msg[4] = (TUIOY - y) / (y2 - y)
+
+        return [msg]
+      } else return []
+    }
+
+    return [msg]
+  })
+
+  const newElements = setsRemoved.map((msg) => {
+    const type = msg[1].toLowerCase()
+    d.bundle('rempving alive msg', msg)
+
+    if (type === 'alive') {
+      const newMsg = [msg[0], msg[1]]
+      for (let i = 2; i < msg.length; i++) {
+        const id = msg[i]
+        if (keptIds.indexOf(id) !== -1) {
+          newMsg.push(id)
+          d.bundle('rempving alive for', id)
+        }
+      }
+      return newMsg
+    }
+
+    return msg
+  })
+
+  return { ...bundle, elements: newElements }
+}
+
+module.exports = { TuioToTouch, dimensionsToFakeElement, adjustToTuioToRegion }
