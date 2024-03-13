@@ -115,7 +115,9 @@ TuioToTouch.prototype.createTouchEvent = function createTouchEvent (type, touche
       changedTouches: browserTouches
     })
     const dispatchTarget = document.contains(target) ? target : this.referenceElement
-    dispatchTarget.dispatchEvent(touchEvent)
+    if (dispatchTarget && 'dispatchEvent' in dispatchTarget) {
+      dispatchTarget.dispatchEvent(touchEvent)
+    }
     seenTargets.set(target)
   }
 }
